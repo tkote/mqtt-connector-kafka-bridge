@@ -1,0 +1,6 @@
+/.*
+!.gitignore
+
+*.properties
+*.sh
+target
