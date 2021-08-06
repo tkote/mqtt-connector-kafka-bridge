@@ -10,6 +10,7 @@ import org.eclipse.microprofile.reactive.messaging.spi.OutgoingConnectorFactory;
 import org.eclipse.microprofile.reactive.streams.operators.PublisherBuilder;
 import org.eclipse.microprofile.reactive.streams.operators.ReactiveStreams;
 import org.eclipse.microprofile.reactive.streams.operators.SubscriberBuilder;
+import org.reactivestreams.FlowAdapters;
 
 @ApplicationScoped
 @Connector("mqtt-connector")
@@ -24,6 +25,6 @@ public class MqttConnector implements IncomingConnectorFactory, OutgoingConnecto
     @Override 
     public PublisherBuilder<? extends Message<?>> getPublisherBuilder(Config config) {
         final MqttPublisher publisher = new MqttPublisher(config);
-        return ReactiveStreams.fromPublisher(publisher);
+        return ReactiveStreams.fromPublisher(FlowAdapters.toPublisher(publisher));
     }
 }

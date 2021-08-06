@@ -15,8 +15,8 @@ RUN mvn package -DskipTests
 
 # Do the Maven build!
 # Incremental docker builds will resume here when you change sources
-ADD mqtt-connector/src ./src
-ADD mqtt-kafka-bridge/src ./src
+ADD mqtt-connector/src ./mqtt-connector/src
+ADD mqtt-kafka-bridge/src ./mqtt-kafka-bridge/src
 RUN mvn package -DskipTests
 RUN echo "done!"
 

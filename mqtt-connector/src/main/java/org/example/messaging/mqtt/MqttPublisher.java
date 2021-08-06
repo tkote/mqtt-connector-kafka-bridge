@@ -2,95 +2,83 @@ package org.example.messaging.mqtt;
 
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.Flow;
 import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.SubmissionPublisher;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Logger;
 
 import org.eclipse.microprofile.config.Config;
 import org.eclipse.microprofile.reactive.messaging.Message;
-import org.reactivestreams.Publisher;
-import org.reactivestreams.Subscriber;
-import org.reactivestreams.Subscription;
 
-//import io.helidon.common.configurable.ScheduledThreadPoolSupplier;
-//import io.helidon.common.configurable.ThreadPoolSupplier;
 import io.vertx.core.Vertx;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.mqtt.MqttClient;
 
-public class MqttPublisher implements Publisher<Message<?>> {
+public class MqttPublisher extends SubmissionPublisher<Message<?>> {
 
     private static Logger logger = Logger.getLogger(MqttPublisher.class.getName());
-/*
-    mp.messaging.connector.mqtt-connector.server=localhost
-    mp.messaging.connector.mqtt-connector.port=1883
-    mp.messaging.connector.mqtt-connector.topic=testtopic
-    mp.messaging.connector.mqtt-connector.qos=1
-*/
+
     private final String server;
     private final int port;
     private final String topic;
     private final int qos;
     private final String payloadType;
     private final String encoding;
+    private final int bufferSize;
+    private final long monitorInterval;
+    private final boolean monitorPublisher;
 
     private final MqttClient client;
 
-//    private final static ExecutorService executor = ThreadPoolSupplier
-//        .builder().threadNamePrefix("mqtt-publisher-").build().get();
-//    private final static ScheduledExecutorService se = ScheduledThreadPoolSupplier
-//        .builder().threadNamePrefix("mqtt-health-").build().get();
     private final static ExecutorService executor = Executors.newCachedThreadPool();
     private final static ScheduledExecutorService se = Executors.newSingleThreadScheduledExecutor();
 
-    @SuppressWarnings("unused")
-    private Subscriber<? super Message<?>> subscriber;
-    private MqttSubscription subscription;
-    private boolean subscribed; // true after first subscribe
-
     public MqttPublisher(Config config) {
+        super(executor, config.getOptionalValue("buffer-size", Integer.class).orElse(Flow.defaultBufferSize()));
+
         server = config.getOptionalValue("server", String.class).orElse("localhost");
         logger.info("server: " + server);
 
         port = config.getOptionalValue("port", Integer.class).orElse(1883);
-        logger.info("Port: " + port);
+        logger.info("port: " + port);
 
         topic = config.getValue("topic", String.class);
-        logger.info("Topic: " + topic);
+        logger.info("topic: " + topic);
 
         qos = config.getOptionalValue("qos", Integer.class).orElse(1);
-        logger.info("Qos: " + qos);
+        logger.info("qos: " + qos);
 
         payloadType = config.getOptionalValue("payload-type", String.class).orElse("bytearray");
-        logger.info("Payload type: " + payloadType);
+        logger.info("payload: " + payloadType);
 
         encoding = config.getOptionalValue("encoding", String.class).orElse("UTF-8");
         if(payloadType.equalsIgnoreCase("string")){
-            logger.info("Encoding: " + encoding);
+            logger.info("encoding: " + encoding);
         }
+
+        bufferSize = config.getOptionalValue("buffer-size", Integer.class).orElse(Flow.defaultBufferSize());
+        logger.info("buffer-size: " + bufferSize);
+
+        monitorInterval = config.getOptionalValue("monitor-interval", Long.class).orElse(5000L);
+        logger.info("monitor-interval: " + monitorInterval);
+
+        monitorPublisher = config.getOptionalValue("monitor-publisher", Boolean.class).orElse(false);
+        logger.info("monitor-lag: " + monitorPublisher);
 
         client = MqttClient.create(Vertx.vertx());
-    }
 
-    @Override
-    public synchronized void subscribe(Subscriber<? super Message<?>> subscriber) {
-        if (subscribed)
-            subscriber.onError(new IllegalStateException()); // only one subscriber is allowed to subscribe
-        else {
-            this.subscriber = subscriber;
-            subscribed = true;
-            subscription = new MqttSubscription(subscriber, executor);
-            subscriber.onSubscribe(subscription);
-            
-            // check connection status every X seconds
-            se.scheduleAtFixedRate(() -> {
-                keepConnection();
-            }, 0, 5, TimeUnit.SECONDS);
+        se.scheduleAtFixedRate(() -> {
+            keepConnection();
+            if(monitorPublisher){
+                String message = String.format("Estimated Maximum Lag=%d, Estimated Minimum Demand=%d.", this.estimateMaximumLag(), this.estimateMinimumDemand());
+                logger.info(message);
+            }
+        }, 0, monitorInterval, TimeUnit.MILLISECONDS);
 
-            Runtime.getRuntime().addShutdownHook(new Thread(() -> {
-                stop();
-            }));
-        }
+        Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+            stop();
+        }));
     }
 
     private boolean isConnecting = false;
@@ -117,10 +105,10 @@ public class MqttPublisher implements Publisher<Message<?>> {
             if(payloadType.equalsIgnoreCase("string")){
                 String message = buffer.toString("UTF-8");
                 logger.fine(String.format("Received [%s %d]\n%s", topic, qos, message));
-                subscription.submit(MqttMessage.of(message, topic, qos));
+                submit(MqttMessage.of(message, topic, qos));
             }else{
                 logger.fine(String.format("Received [%s %d]", topic, qos));
-                subscription.submit(MqttMessage.of(buffer.getBytes(), topic, qos));
+                submit(MqttMessage.of(buffer.getBytes(), topic, qos));
             }
         }).closeHandler(h -> {
             logger.info("mqtt connection closed.");
@@ -134,7 +122,6 @@ public class MqttPublisher implements Publisher<Message<?>> {
         } catch (InterruptedException e) { logger.warning("Executer termination error: " + e.getMessage()); }
 
         client.disconnect().toCompletionStage().toCompletableFuture().join();
-        subscription.close();
 
         executor.shutdown();
         try {
@@ -142,54 +129,6 @@ public class MqttPublisher implements Publisher<Message<?>> {
         } catch (InterruptedException e) { logger.warning("Executer termination error: " + e.getMessage()); }
         logger.info("MqttPublisher was stopped.");
     }
-
-
-    public static class MqttSubscription implements Subscription {
-        private final Subscriber<? super Message<?>> subscriber;
-        private final ExecutorService executor;
-        private boolean completed;
-        private long capacity = 0;
-
-        MqttSubscription(Subscriber<? super Message<?>> subscriber, ExecutorService executor) {
-            this.subscriber = subscriber;
-            this.executor = executor;
-        }
-
-        public synchronized void close(){
-            executor.execute(() -> subscriber.onComplete());
-            completed = true;
-        }
-
-        public synchronized void submit(Message<?> item) {
-            if(completed){
-                throw new RuntimeException("Already completed.");
-            }
-            if(capacity <= 0){
-                throw new RuntimeException("No Capacity right now.");
-            }
-            executor.submit(() -> {
-                subscriber.onNext(item);
-            });
-            if(capacity != Long.MAX_VALUE) capacity--;
-        }
-
-        @Override
-        public synchronized void request(long n) {
-            logger.fine("request: " + n);
-            if(n < 0) {
-                executor.execute(() -> subscriber.onError(new IllegalArgumentException("Bad request: " + n)));
-            }else{
-                capacity = n;
-            }
-        }
-
-        @Override
-        public synchronized void cancel() {
-            logger.info("cancel");
-            completed = true;
-        }
-    }
-
 
 
 }

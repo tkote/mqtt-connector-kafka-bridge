@@ -1,8 +1,0 @@
-# MQTT Connector
-mp.messaging.connector.mqtt-connector.server=localhost
-mp.messaging.connector.mqtt-connector.port=1883
-
-mp.messaging.incoming.mqtt-sub.connector=mqtt-connector
-mp.messaging.incoming.mqtt-sub.topic=testtopic
-mp.messaging.incoming.mqtt-sub.qos=1
-mp.messaging.incoming.mqtt-sub.payload-type=string
