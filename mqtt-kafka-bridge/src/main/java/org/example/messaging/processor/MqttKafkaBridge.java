@@ -1,6 +1,5 @@
 package org.example.messaging.processor;
 
-import java.io.IOException;
 import java.util.logging.Logger;
 
 import javax.enterprise.context.ApplicationScoped;
@@ -19,7 +18,7 @@ public class MqttKafkaBridge {
 
     @Incoming("mqtt-sub")
     @Outgoing("kafka-pub")
-    public KafkaMessage<String, String> in(MqttMessage<String> message) throws IOException{
+    public KafkaMessage<String, String> bridge(MqttMessage<String> message){
         logger.fine("Bridging... \n" + message.getPayload());
         return KafkaMessage.of(message.getTopic().orElse("n/a"), message.getPayload());
     }
