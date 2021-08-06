@@ -15,7 +15,6 @@
     <name>mqtt-kafka-bridge</name>
 
     <properties>
-        <!--docker.file>Dockerfile</docker.file-->
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     </properties>
 
@@ -94,38 +93,6 @@
                     </execution>
                 </executions>
             </plugin>
-
-            <!-- making docker image -->
-<!--
-            <plugin>
-                <groupId>org.codehaus.mojo</groupId>
-                <artifactId>exec-maven-plugin</artifactId>
-                <version>3.0.0</version>
-                <executions>
-                    <! - - docker build - - >
-                    <execution>
-                        <id>docker-build</id>
-                        <goals>
-                            <goal>exec</goal>
-                        </goals>
-                        <configuration>
-                            <executable>docker</executable>
-                            <arguments>
-                                <argument>build</argument>
-                                <argument>-t</argument>
-                                <argument>${project.artifactId}:${project.version}</argument>
-                                <argument>-t</argument>
-                                <argument>${project.artifactId}:latest</argument>
-                                <argument>-f</argument>
-                                <argument>${docker.file}</argument>
-                                <argument>.</argument>
-                            </arguments>
-                            <workingDirectory>${project.basedir}</workingDirectory>
-                        </configuration>
-                    </execution>
-                </executions>
-            </plugin>
--->
         </plugins>
     </build>
 </project>
