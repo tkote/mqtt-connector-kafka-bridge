@@ -1,6 +1,11 @@
 package org.example.messaging.mqtt;
 
 import java.util.Objects;
+import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -34,35 +39,51 @@ public class MqttSubscriber implements Subscriber<Message<?>> {
         logger.info("server: " + server);
 
         port = config.getOptionalValue("port", Integer.class).orElse(1883);
-        logger.info("Port: " + port);
+        logger.info("port: " + port);
 
         topic = config.getValue("topic", String.class);
-        logger.info("Topic: " + topic);
+        logger.info("topic: " + topic);
 
         qos = config.getOptionalValue("qos", Integer.class).orElse(1);
-        logger.info("Qos: " + qos);
+        logger.info("qos: " + qos);
 
         client = MqttClient.create(Vertx.vertx());
+    }
+
+    private boolean isConnecting = false;
+
+    private synchronized void connect(){
+        if(client.isConnected() || isConnecting){
+            return;
+        }
+        final CompletableFuture<Void> f = new CompletableFuture<>();
+        isConnecting = true;
+        client.connect(port, server, h -> {
+            if(h.succeeded()){
+                logger.info("mqtt connection established.");
+            }else{
+                logger.severe("Failed to establish mqtt connection.");
+            }
+            f.complete(null);
+        });
+        f.join();
+        isConnecting = false;
     }
 
     @Override
     public void onSubscribe(Subscription subscription) {
         logger.fine("Subscribed.");
-
-        client.connect(port, server, h -> {
-            if(h.succeeded()){
-                logger.info("mqtt connection established.");
-            }else{
-                throw new RuntimeException("Failed to establish mqtt connection - " + h.result().toString());
-            }
-        });
-
+        connect();
         (this.subscription = subscription).request(Long.MAX_VALUE);
     }
 
     @Override
     public void onNext(Message<?> message) {
         logger.fine("Doing onNext()");
+
+        if(!client.isConnected()){
+            connect();
+        }
 
         Object payload = message.getPayload();
         Buffer buffer = null;
@@ -78,8 +99,33 @@ public class MqttSubscriber implements Subscriber<Message<?>> {
             subscription.cancel();
             logger.log(Level.SEVERE, "Unkown message type: " + payload.getClass().getName());
         }else{
-            client.publish(topic, buffer, MqttQoS.valueOf(qos), false, false);
-            message.ack();
+            String topic = this.topic;
+            int qos = this.qos;
+            if(message instanceof MqttMessage){
+                MqttMessage<?> m = (MqttMessage)message;
+                topic = m.getTopic().orElse(this.topic);
+                qos = m.getQos().orElse(this.qos);
+            }
+            try{
+                io.vertx.core.Future<Integer> future = client.publish(topic, buffer, MqttQoS.valueOf(qos), false, false);
+                logger.fine(String.format("Publishing message [%s %d] %s", topic, qos, message));
+                if(0 != qos){
+                    future.onComplete(ar ->{
+                        if(ar.succeeded()){
+                            logger.fine("Message published: id=" + ar.result());
+                            message.ack();
+                        }else{
+                            Throwable t = ar.cause();
+                            String cause = Objects.isNull(t) ? "(no cause)" : t.getMessage();
+                            logger.severe("Failed to publish message - " + cause);
+                        }
+                    });
+                }else{
+                    message.ack();
+                }
+            }catch(Exception e){
+                logger.log(Level.SEVERE, "Failed to publish message: " + e.getMessage(), e);
+            }
         }
     }
 
