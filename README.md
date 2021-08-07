@@ -23,8 +23,12 @@
     ```
     $ docker run -d --rm --name mqtt-kafka-bridge \
       -e mp.messaging.connector.helidon-kafka.bootstrap.servers=kafka-broker:9092 \
-      -e mp.messaging.connector.mqtt-connector.server=mqtt-broker \
+      -e mp.messaging.incoming.mqtt-sub.server=mqtt-broker \
       -e mp.messaging.incoming.mqtt-sub.topic=some-topic-on-mqtt \
       -e mp.messaging.outgoing.kafka-pub.topic=some-topic-on-kafka \
-      mqtt-kafka-bridge
+      -v $(pwd)/logging-debug.properties:/helidon/logging-debug.properties \
+      -p 8181:8181 \
+      mqtt-kafka-bridge java \
+      -Djava.util.logging.config.file=logging-debug.properties \
+      -jar mqtt-kafka-bridge.jar
     ```
