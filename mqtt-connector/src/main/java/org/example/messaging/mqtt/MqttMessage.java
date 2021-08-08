@@ -18,7 +18,7 @@ public class MqttMessage<T> implements Message<T>{
     private final String topic;
     private final Integer qos;
 
-    private MqttMessage(T payload, Supplier<CompletionStage<Void>> ackSupplier, String topic, Integer qos){
+    private MqttMessage(T payload, String topic, Integer qos, Supplier<CompletionStage<Void>> ackSupplier){
         this.payload = payload;
         this.ackSupplier = Optional.ofNullable(ackSupplier).orElse(() -> {
             CompletableFuture<Void> f = new CompletableFuture<>();
@@ -36,17 +36,17 @@ public class MqttMessage<T> implements Message<T>{
 
     public static <T> MqttMessage<T> of(T payload, String topic, Integer qos){
         Objects.requireNonNull(payload);
-        return new MqttMessage<>(payload, null, topic, qos);
+        return new MqttMessage<>(payload, topic, qos, null);
     }
 
     public static <T> MqttMessage<T> of(T payload, Supplier<CompletionStage<Void>> ackSupplier){
         Objects.requireNonNull(payload);
-        return new MqttMessage<>(payload, ackSupplier, null, null);
+        return new MqttMessage<>(payload, null, null, ackSupplier);
     }
 
-    public static <T> MqttMessage<T> of(T payload, Supplier<CompletionStage<Void>> ackSupplier, String topic, Integer qos){
+    public static <T> MqttMessage<T> of(T payload, String topic, Integer qos, Supplier<CompletionStage<Void>> ackSupplier){
         Objects.requireNonNull(payload);
-        return new MqttMessage<>(payload, ackSupplier, topic, qos);
+        return new MqttMessage<>(payload, topic, qos, ackSupplier);
     }
 
     public Optional<String> getTopic() {

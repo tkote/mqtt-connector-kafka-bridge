@@ -1,11 +1,7 @@
 package org.example.messaging.mqtt;
 
 import java.util.Objects;
-import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -29,6 +25,7 @@ public class MqttSubscriber implements Subscriber<Message<?>> {
     private final int port;
     private final String topic;
     private final int qos;
+    private final boolean bCancelOnError;
 
     private final MqttClient client;
 
@@ -46,6 +43,9 @@ public class MqttSubscriber implements Subscriber<Message<?>> {
 
         qos = config.getOptionalValue("qos", Integer.class).orElse(1);
         logger.info("qos: " + qos);
+
+        bCancelOnError = config.getOptionalValue("cancel-on-error", Boolean.class).orElse(true);
+        logger.info("qos: " + bCancelOnError);
 
         client = MqttClient.create(Vertx.vertx());
     }
@@ -102,7 +102,7 @@ public class MqttSubscriber implements Subscriber<Message<?>> {
             String topic = this.topic;
             int qos = this.qos;
             if(message instanceof MqttMessage){
-                MqttMessage<?> m = (MqttMessage)message;
+                MqttMessage<?> m = (MqttMessage<?>)message;
                 topic = m.getTopic().orElse(this.topic);
                 qos = m.getQos().orElse(this.qos);
             }
@@ -118,6 +118,10 @@ public class MqttSubscriber implements Subscriber<Message<?>> {
                             Throwable t = ar.cause();
                             String cause = Objects.isNull(t) ? "(no cause)" : t.getMessage();
                             logger.severe("Failed to publish message - " + cause);
+                            if(bCancelOnError){
+                                subscription.cancel();
+                                logger.severe("Subscription was canceled.");
+                            }
                         }
                     });
                 }else{
