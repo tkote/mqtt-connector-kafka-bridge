@@ -26,6 +26,8 @@
       -e mp.messaging.incoming.mqtt-sub.server=mqtt-broker \
       -e mp.messaging.incoming.mqtt-sub.topic=some-topic-on-mqtt \
       -e mp.messaging.outgoing.kafka-pub.topic=some-topic-on-kafka \
+      -e mp.messaging.outgoing.mqtt-post.topic=another-topic-on-mqtt \
+      -e mp.messaging.outgoing.kafka-post.connector=null \
       -v $(pwd)/logging-debug.properties:/helidon/logging-debug.properties \
       -p 8181:8181 \
       mqtt-kafka-bridge java \
