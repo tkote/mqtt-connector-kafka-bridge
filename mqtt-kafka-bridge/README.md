@@ -2,12 +2,18 @@
 
 A simple message transfer application from MQTT to Kafka working with [Helidon MP and Kafka Connector](https://helidon.io/docs/v2/#/mp/reactivemessaging/04_kafka)
 
-## REST POST -> MQTT Tool
+## REST POST -> MQTT & REST POST -> Kafka
 
-Optionally you can post MQTT message via REST.
+Optionally you can post MQTT or Kafka message via REST.
 
 ```
-curl -X POST -H "Content-Type: application/json" -d '{"hello":"world!"}' localhost:8181/mqtt/publish?topic=sometopic&qos=1
+$ curl -X POST -H "Content-Type: application/json" -d '{"hello":"world!"}' localhost:8181/mqtt/publish
+$ curl -X POST -H "Content-Type: application/json" -d '{"hello":"world!"}' localhost:8181/mqtt/publish?topic=sometopic&qos=1
+```
+
+```
+$ curl -X POST -H "Content-Type: application/json" -d '{"hello":"world!"}' localhost:8181/kafka/publish
+$ curl -X POST -H "Content-Type: application/json" -d '{"hello":"world!"}' localhost:8181/kafka/publish?key=somekey
 ```
 
 ## Setting
@@ -38,9 +44,13 @@ mp.messaging.outgoing.kafka-pub.connector=helidon-kafka
 mp.messaging.outgoing.kafka-pub.topic=from-mqtt
 
 # REST POST -> MQTT
-mp.messaging.outgoing.mqtt-pub.connector=mqtt-connector
-mp.messaging.outgoing.mqtt-pub.server=localhost
-mp.messaging.outgoing.mqtt-pub.port=1883
-mp.messaging.outgoing.mqtt-pub.topic=to-kafka
-mp.messaging.outgoing.mqtt-pub.qos=1
+mp.messaging.outgoing.mqtt-post.connector=mqtt-connector
+mp.messaging.outgoing.mqtt-post.server=localhost
+mp.messaging.outgoing.mqtt-post.port=1883
+mp.messaging.outgoing.mqtt-post.topic=to-kafka
+mp.messaging.outgoing.mqtt-post.qos=1
+
+# REST POST → Kafka
+mp.messaging.outgoing.kafka-post.connector=helidon-kafka
+mp.messaging.outgoing.kafka-post.topic=kafka-post
 ```

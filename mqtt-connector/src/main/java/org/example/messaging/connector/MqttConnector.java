@@ -1,4 +1,4 @@
-package org.example.messaging.mqtt;
+package org.example.messaging.connector;
 
 import javax.enterprise.context.ApplicationScoped;
 

@@ -1,4 +1,4 @@
-package org.example.messaging.mqtt;
+package org.example.messaging.connector;
 
 import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
@@ -45,7 +45,7 @@ public class MqttSubscriber implements Subscriber<Message<?>> {
         logger.info("qos: " + qos);
 
         bCancelOnError = config.getOptionalValue("cancel-on-error", Boolean.class).orElse(true);
-        logger.info("qos: " + bCancelOnError);
+        logger.info("cancel-on-error: " + bCancelOnError);
 
         client = MqttClient.create(Vertx.vertx());
     }

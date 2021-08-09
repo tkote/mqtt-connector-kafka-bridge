@@ -16,28 +16,31 @@ import javax.ws.rs.core.Response.Status;
 
 import org.eclipse.microprofile.reactive.messaging.Outgoing;
 import org.eclipse.microprofile.reactive.streams.operators.ReactiveStreams;
-import org.example.messaging.connector.MqttMessage;
 import org.reactivestreams.FlowAdapters;
 import org.reactivestreams.Publisher;
 
-@Path("/mqtt")
-@ApplicationScoped
-public class MqttPostResource {
+import io.helidon.messaging.connectors.kafka.KafkaMessage;
 
-    private final SubmissionPublisher<MqttMessage<String>> publisher = new SubmissionPublisher<>(
+@Path("/kafka")
+@ApplicationScoped
+public class KafkaPostResource {
+
+    private final SubmissionPublisher<KafkaMessage<String, String>> publisher = new SubmissionPublisher<>(
         Executors.newCachedThreadPool(), Flow.defaultBufferSize()
     );
 
     @POST @Path("/publish")
     @Consumes(MediaType.APPLICATION_JSON)
-    public Response submitPost(String message, @QueryParam("topic") String topic, @QueryParam("qos") Integer qos) {
+    public Response submitPost(String message, @QueryParam("key") String key) {
         Objects.requireNonNull(message);
-        publisher.submit(MqttMessage.of(message, topic, qos));
+        KafkaMessage<String,String> payload = 
+            Objects.isNull(key) ? KafkaMessage.of(message) : KafkaMessage.of(key, message);
+        publisher.submit(payload);
         return Response.status(Status.ACCEPTED).build();
     }
 
-    @Outgoing("mqtt-post")
-    public Publisher<MqttMessage<String>> preparePublisher() {
+    @Outgoing("kafka-post")
+    public Publisher<KafkaMessage<String, String>> preparePublisher() {
         return ReactiveStreams
                 .fromPublisher(FlowAdapters.toPublisher(publisher))
                 .buildRs();

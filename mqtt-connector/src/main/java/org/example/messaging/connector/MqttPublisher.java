@@ -1,4 +1,4 @@
-package org.example.messaging.mqtt;
+package org.example.messaging.connector;
 
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;

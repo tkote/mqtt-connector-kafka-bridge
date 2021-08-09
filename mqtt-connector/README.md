@@ -19,4 +19,6 @@ MqttSubscriber has not been fully tested.
 | encoding          | when payload-type is string                | UTF-8     |
 | buffer-size       | (publisher) buffer size                    | 256       |
 | monitor-interval  | interval of connection check in msec       | 5000      |  
-| monitor-publisher | log publisher status                      | false     |   
+| monitor-publisher | log publisher status                       | false     |
+| cancel-on-error   | (subscriber) cancel subscription on error  | true      |
+   
