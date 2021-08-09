@@ -112,9 +112,13 @@ public class MqttSubscriber implements Subscriber<Message<?>> {
                 if(0 != qos){
                     future.onComplete(ar ->{
                         if(ar.succeeded()){
-                            logger.fine("Message published: id=" + ar.result());
                             message.ack();
+                            logger.fine("Message published: id=" + ar.result());
                         }else{
+                            if(message instanceof MqttMessage){
+                                MqttMessage<?> m = (MqttMessage<?>)message;
+                                m.nack();
+                            }
                             Throwable t = ar.cause();
                             String cause = Objects.isNull(t) ? "(no cause)" : t.getMessage();
                             logger.severe("Failed to publish message - " + cause);
