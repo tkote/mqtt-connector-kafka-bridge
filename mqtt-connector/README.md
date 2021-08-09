@@ -3,9 +3,6 @@
 MQTT Connector compliant with [Eclipse MicroProfile Reactive Messaging](https://download.eclipse.org/microprofile/microprofile-reactive-messaging-2.0/).  
 This connector is leveraged by [Vert.x MQTT](https://vertx.io/docs/vertx-mqtt/java/).
 
-### **Caveat**
-MqttSubscriber has not been fully tested.
-
 
 ## parameter (should be set in microprofile-config.properties)
 

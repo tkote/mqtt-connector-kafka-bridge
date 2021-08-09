@@ -1,7 +1,7 @@
 # MQTT Connector / MQTT-Kafka Bridge
 
-1. MQTT Connector
-2. MQTT-Kafka Bridge
+1. [MQTT Connector](mqtt-connector/README.md)
+2. [MQTT-Kafka Bridge](mqtt-kafka-bridge/README.md)
 
 
 ### How to build
