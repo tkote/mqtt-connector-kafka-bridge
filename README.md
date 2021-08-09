@@ -12,13 +12,13 @@
     $ mvn package
     ```
 
-+ Create docker image of MQTT-Kafka Bridge
++ Create a docker image of MQTT-Kafka Bridge
 
     ```
     $ mvn -f pom-docker.xml exec:exec@docker-build
     ```
 
-+ Run docker image (example)
++ Run a docker image (example)
 
     ```
     $ docker run -d --rm --name mqtt-kafka-bridge \
