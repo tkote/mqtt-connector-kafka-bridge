@@ -1,6 +1,5 @@
 /.*
 !.gitignore
 
-*.properties
 *.sh
 target
