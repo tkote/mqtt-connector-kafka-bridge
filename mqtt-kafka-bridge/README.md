@@ -61,7 +61,7 @@ mp.messaging.outgoing.kafka-post.topic=kafka-post
 ```
 
 You can disable REST POST tools respectively by setting a special "null" connector  
-(REST call response is always 202 even in this case)
+(REST call response is "503 Service Unavailable" in this case)
 
 ```
 mp.messaging.outgoing.mqtt-post.connector=null
