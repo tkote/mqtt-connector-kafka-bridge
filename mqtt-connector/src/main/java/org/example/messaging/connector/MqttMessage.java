@@ -22,18 +22,16 @@ public class MqttMessage<T> implements Message<T>{
     private MqttMessage(T payload, String topic, Integer qos, 
                 Supplier<CompletionStage<Void>> ackSupplier, Supplier<CompletionStage<Void>> nackSupplier){
         this.payload = payload;
-        this.ackSupplier = Optional.ofNullable(ackSupplier).orElse(() -> {
-            CompletableFuture<Void> f = new CompletableFuture<>();
-            f.complete(null);
-            return f;
-        });
-        this.nackSupplier = Optional.ofNullable(nackSupplier).orElse(() -> {
-            CompletableFuture<Void> f = new CompletableFuture<>();
-            f.complete(null);
-            return f;
-        });
         this.topic = topic;
         this.qos = qos;
+
+        final Supplier<CompletionStage<Void>> defalutSupplier = () -> {
+            CompletableFuture<Void> f = new CompletableFuture<>();
+            f.complete(null);
+            return f;
+        };
+        this.ackSupplier = Optional.ofNullable(ackSupplier).orElse(defalutSupplier);
+        this.nackSupplier = Optional.ofNullable(nackSupplier).orElse(defalutSupplier);
     }
 
     public static <T> MqttMessage<T> of(T payload){
