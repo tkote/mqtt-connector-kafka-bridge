@@ -31,15 +31,10 @@ public class KafkaPostResource {
     private final SubmissionPublisher<KafkaMessage<String, String>> publisher;
     private final boolean enabled;
 
-    //@Inject
-    //@ConfigProperty(name = "mp.messaging.outgoing.kafka-post.connector", defaultValue = "null")
-    //private String connector;
-    
     @Inject
     public KafkaPostResource(
         @ConfigProperty(name = "mp.messaging.outgoing.kafka-post.connector", defaultValue = "null")
-    String connector
-    
+        String connector
     ){
         logger.info("connector: " + connector);
         enabled = connector.equals("null") ? false : true;

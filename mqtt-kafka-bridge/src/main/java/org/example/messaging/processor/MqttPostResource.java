@@ -30,18 +30,16 @@ public class MqttPostResource {
     private final SubmissionPublisher<MqttMessage<String>> publisher;
     private final boolean enabled;
 
-    //@ConfigProperty(name = "mp.messaging.outgoing.mqtt-post.connector", defaultValue = "null")
-    //private String connector;
-
     @Inject
-    public MqttPostResource(@ConfigProperty(name = "mp.messaging.outgoing.mqtt-post.connector", defaultValue = "null")
-    String connector){
+    public MqttPostResource(
+        @ConfigProperty(name = "mp.messaging.outgoing.mqtt-post.connector", defaultValue = "null")
+        String connector
+    ){
         logger.info("connector: " + connector);
         enabled = connector.equals("null") ? false : true;
         logger.info("enabled: " + enabled);
         publisher = new SubmissionPublisher<>();
     }
-
 
     @POST @Path("/publish")
     @Consumes(MediaType.APPLICATION_JSON)
