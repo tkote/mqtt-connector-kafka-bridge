@@ -4,7 +4,7 @@ A simple message transfer application from MQTT to Kafka working with [Helidon M
 
 Note that messages and keys are assumed to be a string type.
 
-## (Optional Tools) REST POST -> MQTT & REST POST -> Kafka
+## (Optional Tools) REST POST to MQTT & Kafka
 
 Optionally you can post MQTT or Kafka messages via REST.
 

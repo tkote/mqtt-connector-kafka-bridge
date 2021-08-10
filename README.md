@@ -1,7 +1,7 @@
 # MQTT Connector / MQTT-Kafka Bridge
 
 1. [MQTT Connector](mqtt-connector)
-2. [MQTT-Kafka Bridge](mqtt-kafka-bridge)
+2. [MQTT-Kafka Bridge & REST Post Tools](mqtt-kafka-bridge)
 
 
 ### How to build
