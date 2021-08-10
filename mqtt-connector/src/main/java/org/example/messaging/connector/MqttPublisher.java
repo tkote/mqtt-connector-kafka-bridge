@@ -3,6 +3,7 @@ package org.example.messaging.connector;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Flow;
+import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.SubmissionPublisher;
 import java.util.concurrent.TimeUnit;
@@ -31,11 +32,10 @@ public class MqttPublisher extends SubmissionPublisher<Message<?>> {
 
     private final MqttClient client;
 
-    private final static ExecutorService executor = Executors.newCachedThreadPool();
     private final static ScheduledExecutorService se = Executors.newSingleThreadScheduledExecutor();
 
     public MqttPublisher(Config config) {
-        super(executor, config.getOptionalValue("buffer-size", Integer.class).orElse(Flow.defaultBufferSize()));
+        super(ForkJoinPool.commonPool(), config.getOptionalValue("buffer-size", Integer.class).orElse(Flow.defaultBufferSize()));
 
         server = config.getOptionalValue("server", String.class).orElse("localhost");
         logger.info("server: " + server);
@@ -120,13 +120,7 @@ public class MqttPublisher extends SubmissionPublisher<Message<?>> {
         try {
             se.awaitTermination(10, TimeUnit.SECONDS);
         } catch (InterruptedException e) { logger.warning("Executer termination error: " + e.getMessage()); }
-
         client.disconnect().toCompletionStage().toCompletableFuture().join();
-
-        executor.shutdown();
-        try {
-            executor.awaitTermination(10, TimeUnit.SECONDS);
-        } catch (InterruptedException e) { logger.warning("Executer termination error: " + e.getMessage()); }
         logger.info("MqttPublisher was stopped.");
     }
 
